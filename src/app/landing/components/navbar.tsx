@@ -118,7 +118,10 @@ export function LandingNavbar() {
             </a>
           </Button> */}
           <Button variant="ghost" asChild className="cursor-pointer">
-            <a href={getAppUrl("/calculator")}>Calculator</a>
+            <a href={getAppUrl("/calculator")}>Register</a>
+          </Button>
+          <Button variant="ghost" asChild className="cursor-pointer">
+            <a href={getAppUrl("#pricing")}>Login</a>
           </Button>
           <Button asChild className="cursor-pointer">
             <a href={getAppUrl("#pricing")}>Join Now!</a>

@@ -4,10 +4,6 @@ import { lazy } from 'react'
 const Landing = lazy(() => import('@/app/landing/page'))
 const Calculator = lazy(() => import('@/app/calculator/page'))
 const Mail = lazy(() => import('@/app/mail/page'))
-const Tasks = lazy(() => import('@/app/tasks/page'))
-const Calendar = lazy(() => import('@/app/calendar/page'))
-const Users = lazy(() => import('@/app/users/page'))
-const FAQs = lazy(() => import('@/app/faqs/page'))
 const Pricing = lazy(() => import('@/app/pricing/page'))
 
 // Error pages
@@ -41,24 +37,8 @@ export const routes: RouteConfig[] = [
     path: "/mail",
     element: <Mail />
   },
-  {
-    path: "/tasks",
-    element: <Tasks />
-  },
-  {
-    path: "/calendar",
-    element: <Calendar />
-  },
 
   // Content Pages
-  {
-    path: "/users",
-    element: <Users />
-  },
-  {
-    path: "/faqs",
-    element: <FAQs />
-  },
   {
     path: "/pricing",
     element: <Pricing />
