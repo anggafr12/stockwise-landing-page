@@ -118,7 +118,10 @@ export function LandingNavbar() {
             </a>
           </Button> */}
           <Button variant="ghost" asChild className="cursor-pointer">
-            <a href={getAppUrl("/calculator")}>Register</a>
+            <a href={getAppUrl("/calculator")}>Calculator</a>
+          </Button>
+          <Button variant="ghost" asChild className="cursor-pointer">
+            <a href={getAppUrl("/auth/sign-up-3")}>Register</a>
           </Button>
           <Button variant="ghost" asChild className="cursor-pointer">
             <a href={getAppUrl("/auth/sign-in-3")}>Login</a>
@@ -232,18 +235,18 @@ export function LandingNavbar() {
                 {/* Primary Actions */}
                 <div className="space-y-3">
                   <Button variant="outline" size="lg" asChild className="w-full cursor-pointer">
-                    <a href={getAppUrl("/dashboard")}>
+                    <a href={getAppUrl("#")}>
                       <LayoutDashboard className="size-4" />
-                      Dashboard
+                      LMS Menu
                     </a>
                   </Button>
 
                   <div className="grid grid-cols-2 gap-3">
                     <Button variant="outline" size="lg" asChild className="cursor-pointer">
-                      <a href={getAppUrl("/auth/sign-in")}>Sign In</a>
+                      <a href={getAppUrl("/auth/sign-in-3")}>Login</a>
                     </Button>
                     <Button asChild size="lg" className="cursor-pointer" >
-                      <a href={getAppUrl("/auth/sign-up")}>Get Started</a>
+                      <a href={getAppUrl("/auth/sign-up-3")}>Register</a>
                     </Button>
                   </div>
                 </div>
