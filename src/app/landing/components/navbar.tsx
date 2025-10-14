@@ -121,7 +121,7 @@ export function LandingNavbar() {
             <a href={getAppUrl("/calculator")}>Register</a>
           </Button>
           <Button variant="ghost" asChild className="cursor-pointer">
-            <a href={getAppUrl("#pricing")}>Login</a>
+            <a href={getAppUrl("/auth/sign-in-3")}>Login</a>
           </Button>
           <Button asChild className="cursor-pointer">
             <a href={getAppUrl("#pricing")}>Join Now!</a>
@@ -144,7 +144,7 @@ export function LandingNavbar() {
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <Logo size={16} />
                   </div>
-                  <SheetTitle className="text-lg font-semibold">ShadcnStore</SheetTitle>
+                  <SheetTitle className="text-lg font-semibold">Stockwise</SheetTitle>
                   <div className="ml-auto flex items-center gap-2">
                     <Button
                       variant="ghost"
