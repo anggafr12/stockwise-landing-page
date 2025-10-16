@@ -1,0 +1,142 @@
+"use client";
+
+import { useState } from "react";
+import { Navbar } from "@/app/lms-main/components/Navbar";
+import { CourseCard, type CourseCardProps } from "@/app/lms-main/components/CourseCard";
+import { CategoryCard } from "@/app/lms-main/components/CategoryCard";
+
+export default function LmsMainPage() {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const categories: {
+    name: string;
+    description: string;
+    level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+    iconColor: string;
+  }[] = [
+    {
+      name: "Beginner Level",
+      description: "Pelajari dasar-dasar keuangan dan manajemen stok",
+      level: "BEGINNER",
+      iconColor: "green",
+    },
+    {
+      name: "Intermediate Level",
+      description: "Tingkatkan kemampuan dengan analisis dan strategi",
+      level: "INTERMEDIATE",
+      iconColor: "blue",
+    },
+    {
+      name: "Advanced Level",
+      description: "Kuasai teknik profesional untuk optimasi bisnis",
+      level: "ADVANCED",
+      iconColor: "purple",
+    },
+  ]
+
+  const courses: CourseCardProps[] = [
+    {
+      title: "Dasar Manajemen Stok",
+      subtitle: "Investing for Beginners", // <-- contoh subtitle
+      description: "Memahami konsep penting dalam mengelola stok barang secara efisien.",
+      thumbnailUrl: "/images/stock1.jpg",
+      videoCount: 8,
+      durationMinutes: 120,
+      level: "BEGINNER",
+      isLocked: false,
+      onClick: () => {}
+    },
+    {
+      title: "Analisis Penjualan Lanjutan",
+      subtitle: "Investing for Beginners", // <-- contoh subtitle
+      description: "Gunakan data untuk memprediksi tren penjualan dan kebutuhan stok.",
+      thumbnailUrl: "/images/stock2.jpg",
+      videoCount: 10,
+      durationMinutes: 180,
+      level: "INTERMEDIATE",
+      isLocked: false,
+      onClick: () => {}
+    },
+    {
+      title: "Optimasi Keuangan Usaha",
+      subtitle: "Investing for Beginners", // <-- contoh subtitle
+      description: "Belajar strategi finansial untuk pertumbuhan bisnis berkelanjutan.",
+      thumbnailUrl: "/images/stock3.jpg",
+      videoCount: 12,
+      durationMinutes: 240,
+      level: "ADVANCED",
+      isLocked: true,
+      onClick: () => {}
+    },
+  ];
+
+  const filteredCourses = selectedCategory
+    ? courses.filter((c) => c.level === selectedCategory)
+    : courses;
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+
+      {/* Hero Section */}
+      <section className="container mx-auto px-6 py-12 text-center">
+        <h1 className="text-4xl font-bold mb-4 text-primary">
+          Selamat Datang di Stockwise Education
+        </h1>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Pelajari cara mengelola stok, menganalisis data, dan mengoptimalkan penjualan
+          dengan kursus interaktif kami.
+        </p>
+      </section>
+
+      {/* Category Section */}
+      <section className="container mx-auto px-6 py-10">
+        <h2 className="text-2xl font-semibold mb-6">Pilih Level Pembelajaran</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {categories.map((cat) => (
+            <CategoryCard
+              key={cat.name}
+              name={cat.name}
+              description={cat.description}
+              iconColor={cat.iconColor}
+              level={cat.level}
+              onClick={() => setSelectedCategory(cat.level)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Course Section */}
+      <section className="container mx-auto px-6 py-10">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-semibold">
+            {selectedCategory ? `Kursus ${selectedCategory}` : "Semua Kursus"}
+          </h2>
+          {selectedCategory && (
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className="text-sm text-primary hover:underline"
+            >
+              Lihat Semua
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCourses.map((course) => (
+            <CourseCard
+              key={course.title}
+              {...course}
+              onClick={() => alert(`Membuka kursus: ${course.title}`)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-6 mt-12 text-center text-sm text-muted-foreground">
+        © 2025 Stockwise Education. All rights reserved.
+      </footer>
+    </div>
+  );
+}

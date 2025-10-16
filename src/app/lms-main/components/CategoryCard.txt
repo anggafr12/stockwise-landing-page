@@ -6,10 +6,10 @@ interface CategoryCardProps {
   description: string;
   level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
   iconColor: string;
-  onClick?: () => void;
+  onClick: () => void;
 }
 
-const CategoryCard = ({ name, description, level, onClick }: CategoryCardProps) => {
+export const CategoryCard = ({ name, description, level, onClick }: CategoryCardProps) => {
   const getColors = () => {
     switch (level) {
       case "BEGINNER":
@@ -64,5 +64,3 @@ const CategoryCard = ({ name, description, level, onClick }: CategoryCardProps) 
     </Card>
   );
 };
-
-export default CategoryCard;

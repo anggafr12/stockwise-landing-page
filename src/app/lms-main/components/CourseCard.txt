@@ -1,0 +1,102 @@
+import { Play, Lock } from "lucide-react";
+import { Card } from "@/app/lms-main/components/ui/card";
+import { Button } from "@/app/lms-main/components/ui/button";
+
+export interface CourseCardProps {
+  title: string;
+  subtitle?: string; // <-- now optional
+  description: string;
+  thumbnailUrl?: string;
+  videoCount: number;
+  durationMinutes: number;
+  level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  isLocked?: boolean;
+  onClick: () => void;
+}
+
+export const CourseCard = ({
+  title,
+  subtitle,
+  description,
+  thumbnailUrl,
+  videoCount,
+  durationMinutes,
+  level,
+  isLocked,
+  onClick
+}: CourseCardProps) => {
+  const getLevelColor = () => {
+    if (level === "BEGINNER") return "text-blue-400";
+    if (level === "INTERMEDIATE") return "text-cyan-400";
+    if (level === "ADVANCED") return "text-amber-400";
+    return "text-white";
+  };
+
+  const formatDuration = () => {
+    const hours = Math.floor(durationMinutes / 60);
+    const mins = durationMinutes % 60;
+    return `${hours} hr ${mins} min`;
+  };
+
+  return (
+    <Card
+      className="bg-[#0A1128] border border-[#1D2A5A] rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
+      onClick={onClick}
+    >
+      {/* Background thumbnail */}
+      <div className="relative h-40 bg-gray-800 overflow-hidden">
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={title}
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-4xl">
+            📚
+          </div>
+        )}
+
+        {/* Overlay Text */}
+        <div className="absolute inset-0 flex flex-col justify-center px-4">
+          {subtitle && <h4 className="text-sm text-gray-300 font-medium">{subtitle}</h4>}
+          <h3 className="text-2xl font-bold text-yellow-400 leading-tight uppercase">
+            {title}
+          </h3>
+        </div>
+
+        {/* Locked overlay */}
+        {isLocked && (
+          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
+            <Lock className="w-10 h-10 text-white mb-2" />
+            <span className="text-white text-sm font-medium">Locked</span>
+          </div>
+        )}
+      </div>
+
+      {/* Card body */}
+      <div className="p-4">
+        <p className={`${getLevelColor()} text-xs font-semibold uppercase mb-1`}>
+          {level}
+        </p>
+        <p className="text-gray-300 text-sm line-clamp-2 mb-3">{description}</p>
+
+        <div className="flex items-center justify-between text-gray-400 text-xs">
+          <span>
+            {videoCount} Videos • {formatDuration()}
+          </span>
+          <Button
+            size="icon"
+            className="bg-[#16225C] hover:bg-[#1F3190] rounded-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick();
+            }}
+          >
+            <Play className="w-4 h-4 text-white fill-white" />
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};

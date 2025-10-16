@@ -5,6 +5,7 @@ import { lazy } from 'react'
 const Landing = lazy(() => import('@/app/landing/page'))
 const Calculator = lazy(() => import('@/app/calculator/page'))
 const Mail = lazy(() => import('@/app/mail/page'))
+const LmsMainPage = lazy(() => import('@/app/lms-main/page'))
 // Error pages
 const Unauthorized = lazy(() => import('@/app/errors/unauthorized/page'))
 const Forbidden = lazy(() => import('@/app/errors/forbidden/page'))
@@ -40,6 +41,12 @@ export const routes: RouteConfig[] = [
   {
     path: "/landing",
     element: <Landing />
+  },
+
+  // LMS Page
+  {
+    path: "/lms-main",
+    element: <LmsMainPage />
   },
 
   // Application Routes

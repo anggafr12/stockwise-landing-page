@@ -1,83 +1,72 @@
-import { Play, Lock } from "lucide-react";
-import { Card } from "@/app/lms-main/components/ui/card";
-import { Button } from "@/app/lms-main/components/ui/button";
+import { Play } from "lucide-react";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { cn } from "@/lib/utils";
 
 interface CourseCardProps {
+  thumbnail: string;
   title: string;
-  description: string;
-  thumbnailUrl?: string;
+  level: "beginner" | "intermediate" | "advanced";
   videoCount: number;
-  durationMinutes: number;
-  level: string;
-  isLocked?: boolean;
-  onClick: () => void;
+  duration: string;
+  onClick?: () => void;
 }
 
-export const CourseCard = ({
+const CourseCard = ({
+  thumbnail,
   title,
-  description,
-  thumbnailUrl,
-  videoCount,
-  durationMinutes,
   level,
-  isLocked,
-  onClick
+  videoCount,
+  duration,
+  onClick,
 }: CourseCardProps) => {
-  const getLevelColor = () => {
-    if (level === 'BEGINNER') return 'text-primary';
-    if (level === 'INTERMEDIATE') return 'text-cyan';
-    return 'text-accent';
-  };
-
-  const formatDuration = () => {
-    const hours = Math.floor(durationMinutes / 60);
-    const mins = durationMinutes % 60;
-    return `${hours}h ${mins}m`;
+  const levelColors = {
+    beginner: "bg-beginner text-beginner-foreground",
+    intermediate: "bg-intermediate text-intermediate-foreground",
+    advanced: "bg-advanced text-advanced-foreground",
   };
 
   return (
-    <Card className="bg-card border-border overflow-hidden group cursor-pointer hover:border-primary transition-all">
+    <div
+      className="border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all cursor-pointer group"
+      style={{ backgroundColor: "#0B1D43" }}
+      onClick={onClick}
+    >
       <div className="relative aspect-video bg-muted overflow-hidden">
-        {thumbnailUrl ? (
-          <img src={thumbnailUrl} alt={title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-6xl">📚</span>
-          </div>
-        )}
-        {isLocked && (
-          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
-            <Lock className="w-12 h-12 text-white mb-2" />
-            <span className="text-white text-sm font-medium">Member Access</span>
-          </div>
-        )}
-        <div className="absolute top-2 left-2">
-          <span className={`${getLevelColor()} text-xs font-bold uppercase px-2 py-1 bg-background/90 rounded`}>
-            {level}
-          </span>
+        <img
+          src={thumbnail}
+          alt={title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <div className="absolute inset-0 flex flex-col justify-center items-center text-white">
+          <p className="text-sm mb-2">Investing for Beginners</p>
+          <h3 className="text-3xl font-bold text-advanced">INVESTING 101</h3>
         </div>
       </div>
-      <div className="p-4">
-        <h3 className="text-white font-semibold mb-2 line-clamp-2">{title}</h3>
-        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{description}</p>
+
+      <div className="p-4 text-white">
+        <Badge className={cn("mb-3 uppercase text-xs", levelColors[level])}>
+          {level}
+        </Badge>
+
+        <h4 className="font-medium mb-3 line-clamp-2">{title}</h4>
+
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            {videoCount} Videos • {formatDuration()}
+          <span className="text-sm text-gray-300">
+            {videoCount} Videos - {duration}
           </span>
-          {!isLocked && (
-            <Button 
-              size="icon" 
-              className="bg-primary hover:bg-primary/80 rounded-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick();
-              }}
-            >
-              <Play className="w-4 h-4" fill="white" />
-            </Button>
-          )}
+
+          <Button
+            size="icon"
+            className="rounded-full bg-primary hover:bg-primary/90"
+          >
+            <Play className="h-4 w-4 fill-current" />
+          </Button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
+
+export default CourseCard;
