@@ -1,12 +1,72 @@
 "use client"
 
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Logo } from "@/components/logo"
+import { useNavigate } from "react-router-dom"
 
 export function SignupForm3({ className, ...props }: React.ComponentProps<"div">) {
+  const [formData, setFormData] = useState({
+    username: "",
+    fullname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    referral: "",
+  })
+
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState("")
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value })
+  }
+
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage("")
+
+    if (formData.password !== formData.confirmPassword) {
+      setMessage("❌ Passwords do not match")
+      setLoading(false)
+      return
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          name: formData.fullname,
+          email: formData.email,
+          password: formData.password,
+          referred_by: formData.referral || null,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message)
+
+      setMessage("✅ Registration successful!")
+      localStorage.setItem("pendingEmail", formData.email);
+      navigate("/auth/verify", { state: { email: formData.email } });
+      
+    } catch (err: any) {
+      setMessage(`❌ ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -15,10 +75,10 @@ export function SignupForm3({ className, ...props }: React.ComponentProps<"div">
       )}
       style={{
         backgroundImage: "url('/vector.png')",
-        backgroundSize: "100% 100%", // ✅ pastikan gambar isi seluruh layar
+        backgroundSize: "100% 100%",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
-        backgroundAttachment: "fixed", // ✅ biar tetap penuh walau discroll
+        backgroundAttachment: "fixed",
       }}
       {...props}
     >
@@ -30,7 +90,7 @@ export function SignupForm3({ className, ...props }: React.ComponentProps<"div">
           <span className="text-2xl font-semibold tracking-wide">STOCKWISE</span>
         </div>
         <Button className="bg-gradient-to-r from-blue-500 to-blue-700 hover:opacity-90 px-6 py-2 text-base font-medium">
-          Login
+          Join!
         </Button>
       </header>
 
@@ -38,8 +98,8 @@ export function SignupForm3({ className, ...props }: React.ComponentProps<"div">
       <main className="w-full max-w-5xl bg-[#0F1624]/90 backdrop-blur-md rounded-3xl p-12 md:p-20 shadow-2xl border border-blue-900/40 transition-all hover:scale-[1.01] duration-300 my-24 mx-4">
         <h1 className="text-center text-5xl font-bold mb-10">Sign Up</h1>
 
-        <form className="space-y-8">
-          {/* Username */}
+        <form className="space-y-8" onSubmit={handleSubmit}>
+          {/* Full Name */}
           <div className="space-y-3">
             <Label htmlFor="username" className="text-gray-300 text-lg">
               Username
@@ -47,7 +107,9 @@ export function SignupForm3({ className, ...props }: React.ComponentProps<"div">
             <Input
               id="username"
               type="text"
-              placeholder="yourusername"
+              placeholder="johndoe"
+              value={formData.username}
+              onChange={handleChange}
               className="bg-[#0B1320] border border-blue-800 text-white text-lg placeholder-gray-500 focus:ring-2 focus:ring-blue-600 py-6 px-4"
               required
             />
@@ -62,20 +124,8 @@ export function SignupForm3({ className, ...props }: React.ComponentProps<"div">
               id="fullname"
               type="text"
               placeholder="John Doe"
-              className="bg-[#0B1320] border border-blue-800 text-white text-lg placeholder-gray-500 focus:ring-2 focus:ring-blue-600 py-6 px-4"
-              required
-            />
-          </div>
-
-          {/* Phone Number */}
-          <div className="space-y-3">
-            <Label htmlFor="phone" className="text-gray-300 text-lg">
-              Phone Number
-            </Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="+62..."
+              value={formData.fullname}
+              onChange={handleChange}
               className="bg-[#0B1320] border border-blue-800 text-white text-lg placeholder-gray-500 focus:ring-2 focus:ring-blue-600 py-6 px-4"
               required
             />
@@ -90,6 +140,8 @@ export function SignupForm3({ className, ...props }: React.ComponentProps<"div">
               id="email"
               type="email"
               placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleChange}
               className="bg-[#0B1320] border border-blue-800 text-white text-lg placeholder-gray-500 focus:ring-2 focus:ring-blue-600 py-6 px-4"
               required
             />
@@ -104,6 +156,8 @@ export function SignupForm3({ className, ...props }: React.ComponentProps<"div">
               id="password"
               type="password"
               placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
               className="bg-[#0B1320] border border-blue-800 text-white text-lg placeholder-gray-500 focus:ring-2 focus:ring-blue-600 py-6 px-4"
               required
             />
@@ -118,12 +172,14 @@ export function SignupForm3({ className, ...props }: React.ComponentProps<"div">
               id="confirmPassword"
               type="password"
               placeholder="••••••••"
+              value={formData.confirmPassword}
+              onChange={handleChange}
               className="bg-[#0B1320] border border-blue-800 text-white text-lg placeholder-gray-500 focus:ring-2 focus:ring-blue-600 py-6 px-4"
               required
             />
           </div>
 
-          {/* Referral */}
+          {/* Referral Code */}
           <div className="space-y-3">
             <Label htmlFor="referral" className="text-gray-300 text-lg">
               Referral Code (Optional)
@@ -132,16 +188,30 @@ export function SignupForm3({ className, ...props }: React.ComponentProps<"div">
               id="referral"
               type="text"
               placeholder="REF123"
+              value={formData.referral}
+              onChange={handleChange}
               className="bg-[#0B1320] border border-blue-800 text-white text-lg placeholder-gray-500 focus:ring-2 focus:ring-blue-600 py-6 px-4"
             />
           </div>
 
-          {/* Signup Button */}
+          {/* Status Message */}
+          {message && (
+            <p
+              className={`text-center text-lg ${
+                message.includes("✅") ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {message}
+            </p>
+          )}
+
+          {/* Submit Button */}
           <Button
             type="submit"
+            disabled={loading}
             className="w-full bg-gradient-to-r from-blue-500 to-blue-700 font-semibold text-2xl py-6 hover:opacity-90 mt-4"
           >
-            CREATE ACCOUNT
+            {loading ? "Processing..." : "CREATE ACCOUNT"}
           </Button>
 
           {/* Already have account */}

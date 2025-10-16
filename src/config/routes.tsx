@@ -21,6 +21,7 @@ const SignUp3 = lazy(() => import('@/app/auth/sign-up-3/page'))
 const ForgotPassword = lazy(() => import('@/app/auth/forgot-password/page'))
 const ForgotPassword2 = lazy(() => import('@/app/auth/forgot-password-2/page'))
 const ForgotPassword3 = lazy(() => import('@/app/auth/forgot-password-3/page'))
+const Verify = lazy(() => import('@/app/auth/verify/page'))
 
 export interface RouteConfig {
   path: string
@@ -115,6 +116,10 @@ export const routes: RouteConfig[] = [
   {
     path: "/auth/forgot-password-3",
     element: <ForgotPassword3 />
+  },
+  {
+    path: "/auth/verify",
+    element: <Verify />
   },
 
 ]
