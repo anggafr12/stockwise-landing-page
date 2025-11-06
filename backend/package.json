@@ -5,18 +5,32 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
+    "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:migrate:tiers": "psql \"$SUPABASE_DB_URL\" -f backend/db/migrations/2025-11-05_add_membership_tiers.sql",
+    "db:seed:tiers": "node backend/scripts/seedTiers.ts",
+    "db:migrate:progress": "psql \"$SUPABASE_DB_URL\" -f backend/db/migrations/2025-11-05_progress_resume.sql"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.75.0",
-    "bcryptjs": "^3.0.2",
+    "@supabase/supabase-js": "^2.78.0",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "nodemailer": "^7.0.9"
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "jsonwebtoken": "^9.0.2",
+    "mime-types": "^3.0.1",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.10",
+    "slugify": "^1.6.6",
+    "zod": "^3.23.8",
+    "uuid": "^13.0.0"
   }
 }
