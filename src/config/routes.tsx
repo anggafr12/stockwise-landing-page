@@ -13,6 +13,9 @@ const CourseDetailPage = lazy(() => import('@/app/lms-main/course/[id]/page'))
 const UserPage = lazy(() => import('@/app/user/page'))
 const EventPage = lazy(() => import('@/app/eventpage/page'))
 const MembershipPage = lazy(() => import('@/app/membership/page'))
+const ReferralDashboard = lazy(() => import('@/app/referral/page'))
+const ReferralHistory = lazy(() => import('@/app/referral/history/page'))
+const ReferralWithdraw = lazy(() => import('@/app/referral/withdraw/page'))
 // Error pages
 const Unauthorized = lazy(() => import('@/app/errors/unauthorized/page'))
 const Forbidden = lazy(() => import('@/app/errors/forbidden/page'))
@@ -31,7 +34,6 @@ const ForgotPassword2 = lazy(() => import('@/app/auth/forgot-password-2/page'))
 const ForgotPassword3 = lazy(() => import('@/app/auth/forgot-password-3/page'))
 const LoginAdminPage = lazy(() => import('@/app/auth/login-admin/page'))
 const Verify = lazy(() => import('@/app/auth/verify/page'))
-const ReferralDashboardPage = lazy(() => import('@/app/(app)/referral/page'))
 // User pages
 // const Profile = lazy(() => import('@/app/user/components/profile'))
 // const Membership = lazy(() => import('@/app/user/components/membership'))
@@ -56,9 +58,7 @@ export const routes: RouteConfig[] = [
   {
     path: "/admin",
     element: (
-      <AppShell>
-        <AdminPage />
-      </AppShell>
+      <AdminPage />
     )
   },
 
@@ -95,15 +95,6 @@ export const routes: RouteConfig[] = [
       </AppShell>
     )
   },
-  // Referral Dashboard
-  {
-    path: "/referral",
-    element: (
-      <AppShell>
-        <ReferralDashboardPage />
-      </AppShell>
-    )
-  },
     // Event Page
   {
     path: "/eventpage",
@@ -120,6 +111,32 @@ export const routes: RouteConfig[] = [
     element: (
       <AppShell>
         <MembershipPage />
+      </AppShell>
+    )
+  },
+
+  // Referral pages
+  {
+    path: "/referral",
+    element: (
+      <AppShell>
+        <ReferralDashboard />
+      </AppShell>
+    )
+  },
+  {
+    path: "/referral/history",
+    element: (
+      <AppShell>
+        <ReferralHistory />
+      </AppShell>
+    )
+  },
+  {
+    path: "/referral/withdraw",
+    element: (
+      <AppShell>
+        <ReferralWithdraw />
       </AppShell>
     )
   },
@@ -214,9 +231,7 @@ export const routes: RouteConfig[] = [
   {
     path: "/auth/sign-in-3",
     element: (
-      <AppShell>
-        <SignIn3 />
-      </AppShell>
+      <SignIn3 />
     )
   },
   {
@@ -270,9 +285,7 @@ export const routes: RouteConfig[] = [
   {
     path: "/auth/login-admin",
     element: (
-      <AppShell>
-        <LoginAdminPage />
-      </AppShell>
+      <LoginAdminPage />
     )
   },
   {

@@ -172,3 +172,61 @@ html {
 .animate-logo-scroll:hover {
   animation-play-state: paused;
 }
+
+/* ---- Stockwise tokens (non-breaking, used for polish) ---- */
+:root {
+  /* brand */
+  --sw-brand-50: #EEF2FF;
+  --sw-brand-100: #E0EAFF;
+  --sw-brand-500: #6E7FF3;
+  --sw-brand-600: #5867E9;
+  --sw-brand-700: #4350DE;
+  /* surface */
+  --sw-surface-base: #0B0F1A;
+  --sw-surface-elevated: #0F1526;
+  --sw-surface-hover: #121A2E;
+  --sw-surface-border: #1B2440;
+  /* accent */
+  --sw-accent-500: #7C4DFF;
+  --sw-accent-600: #6B3BFF;
+  /* status */
+  --sw-success-500: #22C55E;
+  --sw-warning-500: #F59E0B;
+  --sw-danger-500: #EF4444;
+  /* ring + shadow */
+  --sw-ring: rgba(110,127,243,.35);
+  --sw-shadow-soft: 0 0 0 1px rgba(110,127,243,.2), 0 8px 24px rgba(0,0,0,.35);
+}
+
+/* Utility: soft glow shadow */
+.shadow-soft { box-shadow: var(--sw-shadow-soft); }
+.glass {
+  background: linear-gradient(180deg, rgba(14,16,20,.6), rgba(14,16,20,.35));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 0 0 1px rgba(255,255,255,.06);
+}
+.glow { box-shadow: 0 10px 40px -12px rgba(76,116,255,.35); }
+.badge { border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 600; border: 1px solid rgba(255,255,255,.1); }
+
+/* Background helpers: radial gradient + subtle noise overlay */
+.app-bg {
+  background: radial-gradient(1200px 800px at 20% -10%, #101936 0%, var(--sw-surface-base) 40%, var(--sw-surface-base) 100%);
+}
+.bg-noise { position: relative; }
+.bg-noise::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: .06;
+  /* procedural micro-noise using CSS gradient to avoid extra assets */
+  background-image:
+    radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1.5px);
+  background-size: 6px 6px;
+  mix-blend-mode: overlay;
+}
+
+/* Entry animation (fade + slight rise) */
+@keyframes sw-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-up { animation: sw-fade-up .28s ease-out both; }

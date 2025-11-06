@@ -1,28 +1,34 @@
-import { Search, SlidersHorizontal } from "lucide-react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Search } from "lucide-react";
 import { Input } from "./ui/input";
-import { Button } from "./ui/button";
 
-const SearchBar = () => {
+export default function SearchBar({ value, onChange, placeholder = "Search course" }: {
+  value: string;
+  onChange: (q: string) => void;
+  placeholder?: string;
+}) {
+  const [inner, setInner] = useState(value);
+  const timer = useRef<number | null>(null);
+
+  useEffect(() => { setInner(value); }, [value]);
+  useEffect(() => {
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => onChange(inner), 300);
+    return () => { if (timer.current) window.clearTimeout(timer.current); };
+  }, [inner]);
+
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative flex-1">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-        <Input
-          placeholder="Search course"
-          className="pl-12 h-12 bg-[#0B1D43] border border-[#1a2b55] text-white placeholder:text-gray-400 focus:border-[#0070F3] focus:ring-0"
-        />
-      </div>
-
-      <Button
-        variant="outline"
-        className="gap-2 h-12 px-6 bg-[#101B44] border border-[#1a2b55] text-white hover:bg-[#13265C] hover:text-[#0070F3] transition-colors"
-      >
-        <span>Filters</span>
-        <SlidersHorizontal className="h-4 w-4" />
-      </Button>
+    <div className="relative">
+      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+      <Input
+        value={inner}
+        onChange={(e) => setInner(e.target.value)}
+        placeholder={placeholder}
+        className="pl-12 h-12 bg-[#0F1629] border border-[#1E263A] text-white placeholder:text-gray-400 focus:border-[#3B82F6] focus:ring-0"
+      />
     </div>
   );
-};
-
-export default SearchBar;
+}
    

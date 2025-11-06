@@ -7,6 +7,15 @@ import { defineConfig } from "vite"
 export default defineConfig({
   base: '/',
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000", // backend kamu
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

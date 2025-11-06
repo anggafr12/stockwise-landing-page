@@ -1,0 +1,9 @@
+export { default as Sidebar } from "./sidebar";
+export { default as EventsAdmin } from "./EventsAdmin";
+export { default as CoursesAdmin } from "./CoursesAdmin";
+export { default as UsersAdmin } from "./UsersAdmin";
+export { default as TransactionsAdmin } from "./TransactionsAdmin";
+export { default as SettingsAdmin } from "./SettingsAdmin";
+export { default as VideosAdmin } from "./VideosAdmin";
+export { default as MembershipPlansAdmin } from "./MembershipPlansAdmin";
+export { default as BatchesAdmin } from "./BatchesAdmin";

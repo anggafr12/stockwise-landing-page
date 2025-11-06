@@ -1,47 +1,47 @@
-// src/services/referral.ts
-import { apiGet, apiPut } from '@/lib/http'
+import { apiGet, apiPost, apiPut } from "@/lib/http";
 
 export type ReferralStats = {
-  balance: number
-  totalApproved: number
-  totalPaid: number
-  withdrawable: number
-  minWithdraw: number
+  balance: number;
+  totalApproved: number;
+  totalPaid: number;
+  withdrawable: boolean;
+  minWithdraw: number;
+};
+
+export type ReferralLinks = { code: string; registration_link: string };
+
+export type ReferralBankInfo = {
+  bank_code: string;
+  account_number: string;
+  account_name: string;
+  tax_id?: string | null;
+};
+
+export async function getReferralStats() {
+  return apiGet<ReferralStats>("/api/referral/stats");
 }
 
-export type ReferralLinks = {
-  code: string
-  registration_link: string
+export async function getReferralLinks() {
+  return apiGet<ReferralLinks>("/api/referral/links");
 }
 
-export type BankInfo = {
-  user_id?: number
-  bank_name: string
-  account_name: string
-  account_number: string
-  bank_code?: string | null
-  updated_at?: string
-} | null
-
-export function getReferralStats() {
-  return apiGet<ReferralStats>('/api/referral/stats')
+export async function getBankInfo() {
+  return apiGet<{ bank: ReferralBankInfo | null }>("/api/referral/bank-info");
 }
 
-export function getReferralLinks() {
-  return apiGet<ReferralLinks>('/api/referral/links')
+export async function saveBankInfo(payload: ReferralBankInfo) {
+  return apiPut<{ bank: ReferralBankInfo }>("/api/referral/bank-info", payload);
 }
 
-export function getBankInfo() {
-  return apiGet<BankInfo>('/api/referral/bank-info')
+export async function listCommissions(params?: { status?: string; limit?: number; offset?: number }) {
+  return apiGet<{ rows: any[]; total: number; limit: number; offset: number }>("/api/referral/commissions", params as any);
 }
 
-export function updateBankInfo(payload: Omit<Required<BankInfo>, 'user_id' | 'updated_at'>) {
-  const body = {
-    bank_name: payload.bank_name,
-    account_name: payload.account_name,
-    account_number: payload.account_number,
-    bank_code: payload.bank_code ?? null,
-  }
-  return apiPut<BankInfo>('/api/referral/bank-info', body)
+export async function listWithdrawals() {
+  return apiGet<{ rows: any[] }>("/api/referral/withdrawals");
+}
+
+export async function createWithdrawal() {
+  return apiPost<{ ok: true; withdrawal: any }>("/api/referral/withdrawals", {});
 }
 

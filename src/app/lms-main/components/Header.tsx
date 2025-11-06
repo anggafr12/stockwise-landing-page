@@ -1,15 +1,48 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 import { Button } from "./ui/button";
 import { Logo } from "@/components/logo";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getToken, clearToken } from "@/lib/http";
+import { getMe } from "@/lib/app";
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [username, setUsername] = useState<string | null>(null);
+  const [hasToken, setHasToken] = useState<boolean>(false);
+
+  useEffect(() => {
+    const t = getToken();
+    setHasToken(!!t);
+    if (!t) return; // not logged in
+    (async () => {
+      try {
+        const resp = await getMe();
+        const u = (resp as any)?.user || resp;
+        setUsername(u?.username || null);
+      } catch {
+        // ignore if unauthorized or failed
+      }
+    })();
+  }, []);
+
+  const handleLogout = () => {
+    try {
+      clearToken();
+      localStorage.removeItem("CURRENT_USER");
+    } catch {}
+    setUsername(null);
+    setHasToken(false);
+    navigate("/auth/sign-in-3");
+  };
 
   const navItems = [
     { name: "Education", path: "/lms-main" },
     { name: "Stock Research", path: "/stock-research" },
-    { name: "Event", path: "/event" },
+    { name: "Event", path: "/eventpage" },
     { name: "Referral", path: "/referral" },
   ];
 
@@ -43,13 +76,24 @@ const Header = () => {
             </div>
           </div>
 
-          <Button
-            variant="ghost"
-            className="gap-2 text-[#0070F3] hover:text-blue-400 transition-colors"
-          >
-            <User className="h-4 w-4" />
-            <span>username</span>
-          </Button>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/user"
+              className="flex items-center gap-2 text-[#0070F3] hover:text-blue-400 transition-colors"
+            >
+              <User className="h-4 w-4" />
+              <span>{username ?? "username"}</span>
+            </Link>
+            {hasToken && (
+              <Button
+                type="button"
+                onClick={handleLogout}
+                className="px-3 py-1 h-8 bg-transparent border border-[#1E263A] text-gray-300 hover:bg-[#0F1629]"
+              >
+                Logout
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </header>

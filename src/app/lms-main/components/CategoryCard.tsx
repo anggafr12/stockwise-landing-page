@@ -1,68 +1,36 @@
-import { ArrowRight } from "lucide-react";
-import { Card } from "@/app/lms-main/components/ui/card";
+"use client";
 
-interface CategoryCardProps {
-  name: string;
-  description: string;
-  level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
-  iconColor: string;
-  onClick?: () => void;
-}
+type Role = "guest" | "beginer" | "intermediate" | "advanced" | "admin";
 
-const CategoryCard = ({ name, description, level, onClick }: CategoryCardProps) => {
-  const getColors = () => {
-    switch (level) {
-      case "BEGINNER":
-        return {
-          iconBg: "bg-blue-500",
-          cardBg: "bg-[#0A122E]",
-        };
-      case "INTERMEDIATE":
-        return {
-          iconBg: "bg-teal-500",
-          cardBg: "bg-[#0A122E]",
-        };
-      case "ADVANCED":
-        return {
-          iconBg: "bg-yellow-500",
-          cardBg: "bg-[#0A122E]",
-        };
-      default:
-        return {
-          iconBg: "bg-gray-500",
-          cardBg: "bg-[#0A122E]",
-        };
-    }
-  };
-
-  const { iconBg, cardBg } = getColors();
-
-  const getIcon = () => {
-    if (level === "BEGINNER") return "🥚";
-    if (level === "INTERMEDIATE") return "🐔";
-    return "🐂";
-  };
+export default function CategoryCard({
+  selected,
+  onChange,
+}: {
+  selected: Role | null;
+  onChange: (role: Role | null) => void;
+}) {
+  const roles: Role[] = ["guest", "beginer", "intermediate", "advanced", "admin"];
 
   return (
-    <Card
-      className={`${cardBg} border-none p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all hover:scale-105 hover:shadow-lg`}
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-4">
-        <div className={`${iconBg} w-14 h-14 rounded-xl flex items-center justify-center text-3xl`}>
-          {getIcon()}
-        </div>
-        <div>
-          <h3 className="text-lg font-bold text-white">{name}</h3>
-          <p className="text-sm text-gray-400">{description}</p>
-        </div>
-      </div>
-
-      <div className="w-8 h-8 rounded-full bg-[#101B44] flex items-center justify-center">
-        <ArrowRight className="w-4 h-4 text-white" />
-      </div>
-    </Card>
+    <div className="flex flex-wrap gap-2">
+      {roles.map((r) => {
+        const active = selected === r;
+        return (
+          <button
+            key={r}
+            type="button"
+            onClick={() => onChange(active ? null : r)}
+            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+              active
+                ? "bg-[#3B82F6] text-white border-[#3B82F6]"
+                : "bg-[#0F1629] text-gray-300 border-[#1E263A] hover:bg-[#0A0F1E]"
+            }`}
+          >
+            {r}
+          </button>
+        );
+      })}
+    </div>
   );
-};
+}
 
-export default CategoryCard;

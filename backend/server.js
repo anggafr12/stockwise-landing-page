@@ -138,6 +138,10 @@ const REFERRAL_MIN_WITHDRAW = (() => {
   return Number.isFinite(v) && v >= 0 ? v : 100000;
 })();
 const PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_BASE_URL || 'http://localhost:5173';
+const REFERRAL_ALLOWED_PAYMENT_METHODS = (process.env.REFERRAL_ALLOWED_PAYMENT_METHODS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 async function isBucketPublic() {
   if (bucketPublicCache.checked) {
@@ -217,6 +221,7 @@ async function getFileUrl(bucket, path) {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+// moved to earlier env block; see "// -------- Referral envs --------"
 
 function signToken(user) {
   const payload = {
@@ -228,6 +233,46 @@ function signToken(user) {
     name: user.name,
   };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+}
+
+// ===== Referral helpers =====
+function genReferralCode(len = 8) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  for (let i = 0; i < len; i += 1) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return out;
+}
+
+async function ensureReferralCode(userId) {
+  const { data: u } = await supabase.from('users').select('referral_code').eq('id', userId).single();
+  if (u?.referral_code) return u.referral_code;
+  for (let i = 0; i < 5; i += 1) {
+    const code = genReferralCode();
+    const { error } = await supabase.from('users').update({ referral_code: code }).eq('id', userId);
+    if (!error) return code;
+    if (String(error?.message || '').toLowerCase().includes('duplicate')) continue;
+  }
+  const fallback = genReferralCode(10);
+  await supabase.from('users').update({ referral_code: fallback }).eq('id', userId);
+  return fallback;
+}
+
+async function referralBalance(userId) {
+  const { data, error } = await supabase
+    .from('referral_commissions')
+    .select('amount,status')
+    .eq('referrer_id', userId);
+  if (error) throw error;
+  let approvedPending = 0;
+  let paid = 0;
+  (data || []).forEach((r) => {
+    const amt = Number(r.amount || 0);
+    const st = String(r.status || '').toLowerCase();
+    if (st === 'paid') paid += amt;
+    else if (st === 'approved' || st === 'pending') approvedPending += amt;
+  });
+  const totalApproved = approvedPending + paid;
+  return { totalApproved, totalPaid: paid, balance: totalApproved - paid };
 }
 
 // ---- Course tier/role mapping helpers ----
@@ -419,12 +464,31 @@ app.get('/api/me', requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, username, email, name, role, is_verified, discord_id, phone, address, job, batch, membership_expires_at, referred_by, referral_code, created_at, updated_at')
-      .eq('id', userId)
-      .single();
-    if (error) throw error;
+    let data;
+    // Attempt to select with avatar_url; if column missing, fallback without it
+    try {
+      const resp = await supabase
+        .from('users')
+        .select('id, username, email, name, role, is_verified, discord_id, phone, address, job, batch, membership_expires_at, referred_by, referral_code, avatar_url, created_at, updated_at')
+        .eq('id', userId)
+        .single();
+      if (resp.error) throw resp.error;
+      data = resp.data;
+    } catch (selErr) {
+      const code = selErr && selErr.code;
+      const msg = (selErr && selErr.message) || '';
+      if (code === '42703' || /avatar_url/.test(msg)) {
+        const resp2 = await supabase
+          .from('users')
+          .select('id, username, email, name, role, is_verified, discord_id, phone, address, job, batch, membership_expires_at, referred_by, referral_code, created_at, updated_at')
+          .eq('id', userId)
+          .single();
+        if (resp2.error) throw resp2.error;
+        data = resp2.data;
+      } else {
+        throw selErr;
+      }
+    }
     if (!data) return res.status(404).json({ message: 'Not found' });
 
     const now = new Date().toISOString();
@@ -449,6 +513,257 @@ app.get('/api/me', requireAuth, async (req, res) => {
   }
 });
 
+// ===== Referral API =====
+// GET /api/referral/stats
+app.get('/api/referral/stats', requireAuth, async (req, res) => {
+  try {
+    const { totalApproved, totalPaid, balance } = await referralBalance(req.user.id);
+    return res.json({
+      balance,
+      totalApproved,
+      totalPaid,
+      withdrawable: balance >= REFERRAL_MIN_WITHDRAW,
+      minWithdraw: REFERRAL_MIN_WITHDRAW,
+    });
+  } catch (e) {
+    console.error('[referral/stats]', e);
+    return res.status(500).json({ message: 'Internal error' });
+  }
+});
+
+// GET /api/referral/links
+// Returns: { code, registration_link }. Ensures user has a referral_code and builds a frontend sign-up link.
+app.get('/api/referral/links', requireAuth, async (req, res) => {
+  try {
+    const code = await ensureReferralCode(req.user.id);
+    const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.APP_BASE_URL || '';
+    const normalized = base.endsWith('/') ? base.slice(0, -1) : base;
+    return res.json({ code, registration_link: `${normalized}/auth/sign-up-3?ref=${encodeURIComponent(code)}` });
+  } catch (e) {
+    console.error('[referral/links]', e);
+    return res.status(500).json({ message: 'Internal error' });
+  }
+});
+
+// GET /api/referral/bank-info
+app.get('/api/referral/bank-info', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('referral_bank_accounts')
+      .select('bank_code,account_number,account_name,tax_id')
+      .eq('user_id', req.user.id)
+      .single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return res.json({ bank: data || null });
+  } catch (e) {
+    console.error('[referral/bank-info:get]', e);
+    return res.status(500).json({ message: 'Internal error' });
+  }
+});
+
+// PUT /api/referral/bank-info
+// Validates and upserts user bank info. Body: { bank_code, account_number, account_name, tax_id? }
+app.put('/api/referral/bank-info', requireAuth, async (req, res) => {
+  try {
+    const schema = z.object({
+      bank_code: z.string().min(2).max(20),
+      account_number: z.string().min(5).max(50),
+      account_name: z.string().min(2).max(120),
+      tax_id: z.string().min(4).max(100).optional().nullable(),
+    });
+    const parsed = schema.safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({ message: 'Invalid payload', issues: parsed.error.flatten() });
+    }
+    const payload = {
+      user_id: req.user.id,
+      bank_code: parsed.data.bank_code,
+      account_number: parsed.data.account_number,
+      account_name: parsed.data.account_name,
+      tax_id: parsed.data.tax_id || null,
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase
+      .from('referral_bank_accounts')
+      .upsert(payload, { onConflict: 'user_id' })
+      .select('bank_code,account_number,account_name,tax_id')
+      .single();
+    if (error) throw error;
+    return res.json({ bank: data });
+  } catch (e) {
+    console.error('[referral/bank-info:put]', e);
+    return res.status(500).json({ message: 'Internal error' });
+  }
+});
+
+// GET /api/referral/commissions
+app.get('/api/referral/commissions', requireAuth, async (req, res) => {
+  try {
+    const status = (req.query.status || '').toString().toLowerCase();
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit || '10', 10) || 10));
+    const offset = Math.max(0, parseInt(req.query.offset || '0', 10) || 0);
+    let query = supabase
+      .from('referral_commissions')
+      .select('id,amount,currency,status,transaction_id,referred_user_id,created_at', { count: 'exact' })
+      .eq('referrer_id', req.user.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (status && ['approved', 'paid', 'pending', 'rejected'].includes(status)) {
+      query = query.eq('status', status);
+    }
+    const { data, count, error } = await query;
+    if (error) throw error;
+    return res.json({ rows: data || [], total: count || 0, limit, offset });
+  } catch (e) {
+    console.error('[referral/commissions]', e);
+    return res.status(500).json({ message: 'Internal error' });
+  }
+});
+
+// GET /api/referral/withdrawals
+app.get('/api/referral/withdrawals', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('referral_withdrawals')
+      .select('id,amount,status,created_at,processed_at,method')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return res.json({ rows: data || [] });
+  } catch (e) {
+    console.error('[referral/withdrawals:get]', e);
+    return res.status(500).json({ message: 'Internal error' });
+  }
+});
+
+// POST /api/referral/withdrawals
+app.post('/api/referral/withdrawals', requireAuth, async (req, res) => {
+  try {
+    // bank info required
+    const { data: bank } = await supabase
+      .from('referral_bank_accounts')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .maybeSingle();
+    if (!bank) return res.status(400).json({ message: 'Lengkapi bank information terlebih dahulu.' });
+
+    const { balance } = await referralBalance(req.user.id);
+    if (balance < REFERRAL_MIN_WITHDRAW) {
+      return res.status(400).json({ message: `Minimal penarikan ${REFERRAL_MIN_WITHDRAW}` });
+    }
+
+    const { data: wd, error: insErr } = await supabase
+      .from('referral_withdrawals')
+      .insert({
+        user_id: req.user.id,
+        amount: balance,
+        status: 'requested',
+        method: 'bank_transfer',
+        bank_snapshot: bank,
+      })
+      .select('*')
+      .single();
+    if (insErr) throw insErr;
+
+    const { error: updErr } = await supabase
+      .from('referral_commissions')
+      .update({ status: 'paid', paid_withdrawal_id: wd.id })
+      .eq('referrer_id', req.user.id)
+      .eq('status', 'approved');
+    if (updErr) console.warn('[referral/withdrawals] update commissions warn', updErr?.message || updErr);
+
+    return res.json({ ok: true, withdrawal: wd });
+  } catch (e) {
+    console.error('[referral/withdrawals:post]', e);
+    return res.status(500).json({ message: 'Internal error' });
+  }
+});
+
+// ===== Commission processor (simplified) =====
+async function processPaidTransaction(txId) {
+  try {
+    const { data: tx, error: txErr } = await supabase.from('transactions').select('*').eq('id', txId).single();
+    if (txErr || !tx) return console.warn('[commission] tx not found', txId);
+    if (tx.status !== 'PAID') return console.warn('[commission] tx not PAID', txId);
+    if (REFERRAL_ALLOWED_PAYMENT_METHODS.length && tx.payment_channel && !REFERRAL_ALLOWED_PAYMENT_METHODS.includes(tx.payment_channel)) {
+      return console.log('[commission] payment channel not eligible', tx.payment_channel);
+    }
+    // attribution priority
+    let code = (tx.referral_code || '').trim();
+    if (!code && tx.kind === 'course' && tx.ref_id) {
+      const { data: enr } = await supabase
+        .from('enrollments')
+        .select('referral_used')
+        .eq('user_id', tx.user_id)
+        .eq('course_id', tx.ref_id)
+        .order('enrolled_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      code = (enr?.referral_used || '').trim();
+    }
+    if (!code) {
+      const { data: buyer } = await supabase.from('users').select('referred_by').eq('id', tx.user_id).single();
+      code = (buyer?.referred_by || '').trim();
+    }
+    if (!code) return console.log('[commission] no referral code for tx', txId);
+
+    const { data: referrer } = await supabase.from('users').select('id').eq('referral_code', code).maybeSingle();
+    if (!referrer?.id) return console.log('[commission] referrer not found for code', code);
+    if (referrer.id === tx.user_id) return console.warn('[commission] self-referral ignored', txId);
+
+    const amount = Math.floor(Number(tx.amount || 0) * REFERRAL_COMMISSION_PCT);
+    if (!(amount > 0)) return console.log('[commission] zero amount, skip', txId);
+
+    const insert = {
+      referrer_id: referrer.id,
+      referred_user_id: tx.user_id,
+      transaction_id: tx.id,
+      amount,
+      currency: tx.currency || 'IDR',
+      status: 'approved',
+    };
+    const { error: insErr } = await supabase.from('referral_commissions').insert(insert);
+    if (insErr) {
+      const msg = (insErr && insErr.message) || '';
+      if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('unique')) {
+        console.warn('[commission] duplicate for tx', txId);
+      } else {
+        console.error('[commission] insert failed', insErr);
+      }
+    }
+  } catch (e) {
+    console.error('[commission] processor error', e);
+  }
+}
+
+async function handleRefundOrFail(txId) {
+  try {
+    const { data: com } = await supabase
+      .from('referral_commissions')
+      .select('id,status')
+      .eq('transaction_id', txId)
+      .maybeSingle();
+    if (!com) return; // nothing
+    if (com.status === 'paid') {
+      console.warn('[commission] refund after paid - requires manual reconcile', txId);
+      return;
+    }
+    await supabase.from('referral_commissions').update({ status: 'rejected' }).eq('id', com.id);
+  } catch (e) {
+    console.error('[commission] refund handler error', e);
+  }
+}
+
+// Dev-only simulate endpoint
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/api/dev/referral/simulate-paid', requireAdmin, async (req, res) => {
+    const txId = Number(req.body?.txId || req.query.txId || 0);
+    if (!txId) return res.status(400).json({ message: 'txId required' });
+    await processPaidTransaction(txId);
+    return res.json({ ok: true });
+  });
+}
+
 // POST /api/me/avatar
 // Upload avatar image for current user (multipart form: field "file").
 // Returns: { avatar_url }
@@ -467,11 +782,20 @@ app.post('/api/me/avatar', requireAuth, upload.single('file'), async (req, res) 
       .upload(objectPath, file.buffer, { contentType: file.mimetype || 'image/png', upsert: false });
     if (upErr) throw upErr;
     const avatarUrl = await getFileUrl(BUCKET_MEDIA, objectPath);
-    const { error: updErr } = await supabase
-      .from('users')
-      .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
-      .eq('id', userId);
-    if (updErr) throw updErr;
+    try {
+      const { error: updErr } = await supabase
+        .from('users')
+        .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+      if (updErr) throw updErr;
+    } catch (updErr) {
+      const code = updErr && updErr.code;
+      const msg = (updErr && updErr.message) || '';
+      if (!(code === '42703' || /avatar_url/.test(msg))) {
+        throw updErr;
+      }
+      console.warn('avatar_url column absent; returning URL without persisting. Add avatar_url text to users table.');
+    }
     return res.json({ avatar_url: avatarUrl });
   } catch (e) {
     console.error('POST /api/me/avatar failed', e);
@@ -2511,6 +2835,12 @@ app.post('/api/webhooks/xendit', express.json({ type: '*/*' }), async (req, res)
                 await supabase.from('users').update({ role, updated_at: new Date().toISOString() }).eq('id', mem.user_id);
               }
             }
+          }
+          // Referral commission hook
+          if (patch.status === 'PAID') {
+            await processPaidTransaction(tx.id);
+          } else if (['REFUNDED', 'FAILED', 'EXPIRED'].includes(patch.status || '')) {
+            await handleRefundOrFail(tx.id);
           }
         }
       }

@@ -1,13 +1,2 @@
-import { cn } from "@/lib/utils"
+export { Skeleton as default } from "@/app/lms-main/components/ui/skeleton";
 
-function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="skeleton"
-      className={cn("bg-accent animate-pulse rounded-md", className)}
-      {...props}
-    />
-  )
-}
-
-export { Skeleton }
